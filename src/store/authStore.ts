@@ -1,36 +1,31 @@
-import { create } from 'zustand';
-import { apiClient } from '../lib/apiClient';
-import { User } from '../types';
 
-// Define the shape of the state and its actions
+// =============== src/store/authStore.ts ===============
+import { create as createZustand } from 'zustand';
+import { apiClient as api } from '../lib/apiClient';
+import type { User as UserType } from '../types';
+
 interface AuthState {
-  user: User | null;
+  user: UserType | null;
   isLoading: boolean;
   checkAuth: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
-// Create the Zustand store
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = createZustand<AuthState>((set) => ({
   user: null,
-  isLoading: true, // Start in a loading state until we've checked for a session
-
-  // Action to check if a user is already logged in (e.g., via a cookie)
+  isLoading: true,
   checkAuth: async () => {
     set({ isLoading: true });
     try {
-      const { data } = await apiClient.get<User>('/auth/me');
+      const { data } = await api.get<UserType>('/auth/me');
       set({ user: data, isLoading: false });
     } catch (error) {
-      // If the request fails, it means the user is not authenticated
       set({ user: null, isLoading: false });
     }
   },
-
-  // Action to log the user out
   logout: async () => {
     try {
-      await apiClient.post('/auth/logout');
+      await api.post('/auth/logout');
       set({ user: null });
     } catch (error) {
       console.error('Logout failed:', error);

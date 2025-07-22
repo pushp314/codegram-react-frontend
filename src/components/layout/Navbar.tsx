@@ -1,7 +1,10 @@
-import { Bell, PlusCircle, LogOut, Sun, Moon, Github } from 'lucide-react';
+// =============== src/components/layout/Navbar.tsx ===============
+import { PlusCircle, LogOut, Sun, Moon, Github as GithubNav } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
 import { API_BASE_URL } from '../../config/constants';
+import { Link } from 'react-router-dom';
+import { NotificationDropdown } from '../notifications/NotificationDropdown';
 
 export function Navbar() {
   const { user, logout } = useAuthStore();
@@ -12,7 +15,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 p-4 flex justify-between items-center border-b dark:border-gray-700">
+    <header className="bg-white dark:bg-gray-800 p-4 flex justify-between items-center border-b dark:border-gray-700 flex-shrink-0">
       <div>{/* Placeholder for breadcrumbs or page title */}</div>
       <div className="flex items-center gap-4">
         <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -20,21 +23,17 @@ export function Navbar() {
         </button>
         {user ? (
           <>
-            <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 relative">
-              <Bell />
-              {/* Example unread count */}
-              <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
-            </button>
-            <button className="flex items-center gap-2 bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors">
+            <NotificationDropdown />
+            <Link to="/create/snippet" className="flex items-center gap-2 bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors">
               <PlusCircle size={20} /> New
-            </button>
+            </Link>
             <button onClick={logout} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
               <LogOut />
             </button>
           </>
         ) : (
           <button onClick={handleLogin} className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-            <Github size={20} /> Login with GitHub
+            <GithubNav size={20} /> Login
           </button>
         )}
       </div>
