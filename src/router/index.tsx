@@ -19,6 +19,7 @@ const SearchPage = lazy(() => import('../pages/SearchPage').then(module => ({ de
 const TrendingPage = lazy(() => import('../pages/TrendingPage').then(module => ({ default: module.TrendingPage })));
 const CreateDocPage = lazy(() => import('../pages/CreateDocPage').then(module => ({ default: module.CreateDocPage })));
 const DocDetailPage = lazy(() => import('../pages/DocDetailPage').then(module => ({ default: module.DocDetailPage })));
+const EditDocPage = lazy(() => import('../pages/EditDocPage').then(module => ({ default: module.EditDocPage }))); // New
 const CreateBugPage = lazy(() => import('../pages/CreateBugPage').then(module => ({ default: module.CreateBugPage })));
 const BugDetailPage = lazy(() => import('../pages/BugDetailPage').then(module => ({ default: module.BugDetailPage })));
 const EditProfilePage = lazy(() => import('../pages/EditProfilePage').then(module => ({ default: module.EditProfilePage })));
@@ -58,6 +59,7 @@ export function AppRouter() {
               </Route>
               <Route path="/create/snippet" element={<CreateSnippetPage />} />
               <Route path="/create/doc" element={<CreateDocPage />} />
+              <Route path="/docs/:id/edit" element={<EditDocPage />} /> {/* New */}
               <Route path="/create/bug" element={<CreateBugPage />} />
 
               {/* Admin routes */}

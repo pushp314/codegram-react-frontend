@@ -1,22 +1,39 @@
 // =============== src/components/layout/Navbar.tsx ===============
-import { PlusCircle, LogOut, Sun, Moon, Github as GithubNav } from 'lucide-react';
+import { LogOut, Sun, Moon, Search } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
-import { API_BASE_URL } from '../../config/constants';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { NotificationDropdown } from '../notifications/NotificationDropdown';
+import { Input } from '../ui/Input';
+import React, { useEffect, useState } from 'react';
+import { Button } from '../ui/Button';
 
 export function Navbar() {
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
 
-  const handleLogin = () => {
-    window.location.href = `${API_BASE_URL}/auth/github`;
+  useEffect(() => {
+      setSearchQuery(searchParams.get('q') || '');
+  }, [searchParams]);
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (searchQuery.trim()) {
+          navigate(`/search?q=${searchQuery.trim()}`);
+      }
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 p-4 flex justify-between items-center border-b dark:border-gray-700 flex-shrink-0">
-      <div>{/* Placeholder for breadcrumbs or page title */}</div>
+    <header className="bg-white dark:bg-gray-800 p-4 flex justify-between items-center border-b dark:border-gray-700 gap-4">
+      <div className="flex-1 min-w-0">
+         <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Input name="search" placeholder="Search..." className="pl-10 w-full max-w-md" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+         </form>
+      </div>
       <div className="flex items-center gap-4">
         <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
           {theme === 'light' ? <Moon /> : <Sun />}
@@ -24,17 +41,16 @@ export function Navbar() {
         {user ? (
           <>
             <NotificationDropdown />
-            <Link to="/create/snippet" className="flex items-center gap-2 bg-sky-500 text-white px-4 py-2 rounded-lg hover:bg-sky-600 transition-colors">
-              <PlusCircle size={20} /> New
-            </Link>
+            <div className="flex gap-2">
+                <Link to="/create/snippet"><Button size="sm">New Snippet</Button></Link>
+                <Link to="/create/doc"><Button size="sm" variant="outline">New Doc</Button></Link>
+            </div>
             <button onClick={logout} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
               <LogOut />
             </button>
           </>
         ) : (
-          <button onClick={handleLogin} className="flex items-center gap-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
-            <GithubNav size={20} /> Login
-          </button>
+          <Link to="/login"><Button>Login</Button></Link>
         )}
       </div>
     </header>
