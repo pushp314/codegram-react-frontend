@@ -1,5 +1,5 @@
 // =============== src/components/layout/Navbar.tsx ===============
-import { LogOut, Sun, Moon, Search } from 'lucide-react';
+import { LogOut, Sun, Moon, Search, Plus } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { NotificationDropdown } from '../notifications/NotificationDropdown';
 import { Input } from '../ui/Input';
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/Button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/DropdownMenu';
 
 export function Navbar() {
   const { user, logout } = useAuthStore();
@@ -41,10 +42,16 @@ export function Navbar() {
         {user ? (
           <>
             <NotificationDropdown />
-            <div className="flex gap-2">
-                <Link to="/create/snippet"><Button size="sm">New Snippet</Button></Link>
-                <Link to="/create/doc"><Button size="sm" variant="outline">New Doc</Button></Link>
-            </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button><Plus size={16} className="mr-2" /> New</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={() => navigate('/create/snippet/select')}>Snippet</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => navigate('/create/doc')}>Document</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => navigate('/create/bug')}>Bug Report</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
             <button onClick={logout} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
               <LogOut />
             </button>

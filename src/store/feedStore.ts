@@ -1,4 +1,3 @@
-// =============== src/store/feedStore.ts ===============
 import { create } from 'zustand';
 import { apiClient as apiFeed } from '../lib/apiClient';
 import { FeedItemDTO } from '../types';
@@ -13,6 +12,7 @@ interface FeedState {
   fetchFeed: () => Promise<void>;
   resetFeed: () => void;
   updateItem: (itemId: string, updates: Partial<FeedItemDTO>) => void;
+  addFeedItem: (item: FeedItemDTO) => void; // <-- The new function for real-time updates
 }
 
 export const useFeedStore = create(
@@ -35,7 +35,10 @@ export const useFeedStore = create(
         const { data, hasMore: newHasMore } = response.data;
         
         set((state) => {
-          state.items.push(...data);
+          // Avoid adding duplicate items
+          const existingIds = new Set(state.items.map(item => item.id));
+          const newItems = data.filter((item: FeedItemDTO) => !existingIds.has(item.id));
+          state.items.push(...newItems);
           state.page = state.page + 1;
           state.hasMore = newHasMore;
           state.isLoading = false;
@@ -51,8 +54,20 @@ export const useFeedStore = create(
         set(state => {
             const itemIndex = state.items.findIndex(item => item.id === itemId);
             if (itemIndex !== -1) {
-                // Directly mutate the draft state as immer intends
                 Object.assign(state.items[itemIndex], updates);
+            }
+        });
+    },
+
+    /**
+     * Adds a new feed item to the beginning of the list for real-time updates.
+     * This is called by the socket listener in AppLayout.
+     */
+    addFeedItem: (item) => {
+        set(state => {
+            // Check if the item already exists to prevent duplicates
+            if (!state.items.some(existingItem => existingItem.id === item.id)) {
+                state.items.unshift(item); // Add the new item to the top
             }
         });
     },

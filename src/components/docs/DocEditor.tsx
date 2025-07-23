@@ -1,6 +1,6 @@
 // =============== src/components/docs/DocEditor.tsx ===============
 import React, { useState, useEffect } from 'react';
-import { Save, Send, Eye, FileText, X, Hash, Plus, UploadCloud } from 'lucide-react';
+import { Save, Send, Eye, FileText, X, Hash, Plus, UploadCloud, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useAutosave, loadDraft } from '../../hooks/useAutosave';
@@ -11,6 +11,7 @@ import { Textarea } from '../ui/Textarea';
 import { Spinner } from '../ui/Spinner';
 import { Switch } from '../ui/Switch';
 import { Label } from '../ui/Label';
+import { Link } from 'react-router-dom';
 
 interface DocEditorProps {
   onSubmit: (values: any) => Promise<void>;
@@ -39,7 +40,6 @@ export const DocEditor: React.FC<DocEditorProps> = ({ onSubmit, docId, initialDa
             setTitle(draft.title || '');
             setDescription(draft.description || '');
             setMarkdown(draft.markdown || '');
-            // Ensure tags are always an array
             setTags(Array.isArray(draft.tags) ? draft.tags : []);
             setIsPublic(draft.isPublic !== false);
             setCoverImage(draft.coverImage || '');
@@ -47,7 +47,7 @@ export const DocEditor: React.FC<DocEditorProps> = ({ onSubmit, docId, initialDa
     }, [formKey]);
 
     const handleAddTag = () => {
-        const newTag = tagInput.trim();
+        const newTag = tagInput.trim().toLowerCase();
         if (newTag && !tags.includes(newTag)) {
             setTags([...tags, newTag]);
             setTagInput('');
@@ -76,8 +76,11 @@ export const DocEditor: React.FC<DocEditorProps> = ({ onSubmit, docId, initialDa
         <div className="max-w-7xl mx-auto">
             <form onSubmit={handleSubmit}>
                 <header className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold">{docId ? 'Edit Document' : 'Create Document'}</h1>
+                    <div className="flex items-center space-x-4">
+                        <Link to="/create" className="flex items-center gap-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+                            <ArrowLeft size={20} /> Back
+                        </Link>
+                        <h1 className="text-2xl font-bold">{docId ? 'Edit Document' : 'Create Documentation'}</h1>
                     </div>
                     <div className="flex items-center space-x-3">
                         <Button type="button" variant="outline" disabled={isSubmitting}>
@@ -89,13 +92,16 @@ export const DocEditor: React.FC<DocEditorProps> = ({ onSubmit, docId, initialDa
                     </div>
                 </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-220px)]">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-300px)]">
                     <div className="bg-white dark:bg-gray-800 rounded-xl border flex flex-col">
-                        <div className="p-4 border-b flex items-center gap-2"><FileText size={20} /> Markdown</div>
-                        <Textarea value={markdown} onChange={e => setMarkdown(e.target.value)} className="w-full h-full p-4 font-mono text-sm resize-none focus:outline-none border-0" placeholder="Write your documentation..." />
+                        <div className="p-4 border-b flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2 font-semibold"><FileText size={16} /> Markdown Editor</div>
+                            <span className="text-gray-500">Supports GitHub Flavored Markdown</span>
+                        </div>
+                        <Textarea value={markdown} onChange={e => setMarkdown(e.target.value)} className="w-full h-full p-4 font-mono text-sm resize-none focus:outline-none border-0 rounded-b-xl" placeholder="Write your documentation..." />
                     </div>
                     <div className="bg-white dark:bg-gray-800 rounded-xl border flex flex-col">
-                        <div className="p-4 border-b flex items-center gap-2"><Eye size={20} /> Preview</div>
+                        <div className="p-4 border-b flex items-center gap-2 font-semibold"><Eye size={16} /> Live Preview</div>
                         <div className="flex-1 overflow-y-auto p-6 prose prose-lg dark:prose-invert max-w-none">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
                         </div>
@@ -103,21 +109,31 @@ export const DocEditor: React.FC<DocEditorProps> = ({ onSubmit, docId, initialDa
                 </div>
 
                 <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl border p-6">
-                    <h3 className="text-lg font-semibold mb-4">Details</h3>
+                    <h3 className="text-lg font-semibold mb-4">Documentation Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <Label>Title *</Label>
-                            <Input value={title} onChange={e => setTitle(e.target.value)} required />
+                            <Input value={title} onChange={e => setTitle(e.target.value)} required placeholder="Enter documentation title..." />
                         </div>
                         <div>
+                            <Label>Cover Image URL</Label>
+                             <div className="flex items-center gap-2">
+                                <Input value={coverImage} onChange={e => setCoverImage(e.target.value)} placeholder="Image URL or upload" />
+                                <Button asChild variant="outline">
+                                    <label htmlFor="cover-upload" className="cursor-pointer"><UploadCloud size={16} /></label>
+                                </Button>
+                                <input id="cover-upload" type="file" className="hidden" onChange={handleCoverImageUpload} />
+                            </div>
+                        </div>
+                        <div className="md:col-span-2">
                             <Label>Description</Label>
-                            <Input value={description} onChange={e => setDescription(e.target.value)} />
+                            <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe your documentation..." />
                         </div>
-                        <div>
+                        <div className="md:col-span-2">
                             <Label>Tags</Label>
                             <div className="flex items-center gap-2">
-                                <Input value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); }}} placeholder="Add a tag..." />
-                                <Button type="button" onClick={handleAddTag}><Plus size={16} /></Button>
+                                <Input value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); handleAddTag(); }}} placeholder="Add a tag and press Enter..." />
+                                <Button type="button" onClick={handleAddTag}><Plus size={16} /> Add</Button>
                             </div>
                             <div className="flex flex-wrap gap-2 mt-2">
                                 {tags.map(tag => (
@@ -128,19 +144,9 @@ export const DocEditor: React.FC<DocEditorProps> = ({ onSubmit, docId, initialDa
                                 ))}
                             </div>
                         </div>
-                        <div>
-                            <Label>Cover Image</Label>
-                            <div className="flex items-center gap-2">
-                                <Input value={coverImage} onChange={e => setCoverImage(e.target.value)} placeholder="Image URL or upload" />
-                                <Button asChild variant="outline">
-                                    <label htmlFor="cover-upload" className="cursor-pointer"><UploadCloud size={16} /></label>
-                                </Button>
-                                <input id="cover-upload" type="file" className="hidden" onChange={handleCoverImageUpload} />
-                            </div>
-                        </div>
                         <div className="flex items-center space-x-2">
                             <Switch id="isPublic" checked={isPublic} onCheckedChange={setIsPublic} />
-                            <Label htmlFor="isPublic">Make Public</Label>
+                            <Label htmlFor="isPublic">Make this documentation public</Label>
                         </div>
                     </div>
                 </div>

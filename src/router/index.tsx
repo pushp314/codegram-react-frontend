@@ -12,14 +12,17 @@ const LoginPage = lazy(() => import('../pages/LoginPage').then(module => ({ defa
 const ProfilePage = lazy(() => import('../pages/ProfilePage').then(module => ({ default: module.ProfilePage })));
 const SettingsPage = lazy(() => import('../pages/SettingsPage').then(module => ({ default: module.SettingsPage })));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })));
-const CreateSnippetPage = lazy(() => import('../pages/CreateSnippetPage').then(module => ({ default: module.CreateSnippetPage })));
+const CreatePage = lazy(() => import('../pages/CreatePage').then(module => ({ default: module.CreatePage })));
+const SelectSnippetTypePage = lazy(() => import('../pages/SelectSnippetTypePage').then(module => ({ default: module.SelectSnippetTypePage })));
+const HtmlSnippetEditorPage = lazy(() => import('../pages/HtmlSnippetEditorPage').then(module => ({ default: module.HtmlSnippetEditorPage })));
+const ReactSnippetEditorPage = lazy(() => import('../pages/ReactSnippetEditorPage').then(module => ({ default: module.ReactSnippetEditorPage })));
 const SnippetDetailPage = lazy(() => import('../pages/SnippetDetailPage').then(module => ({ default: module.SnippetDetailPage })));
 const PublicFeedPage = lazy(() => import('../pages/PublicFeedPage').then(module => ({ default: module.PublicFeedPage })));
 const SearchPage = lazy(() => import('../pages/SearchPage').then(module => ({ default: module.SearchPage })));
 const TrendingPage = lazy(() => import('../pages/TrendingPage').then(module => ({ default: module.TrendingPage })));
 const CreateDocPage = lazy(() => import('../pages/CreateDocPage').then(module => ({ default: module.CreateDocPage })));
 const DocDetailPage = lazy(() => import('../pages/DocDetailPage').then(module => ({ default: module.DocDetailPage })));
-const EditDocPage = lazy(() => import('../pages/EditDocPage').then(module => ({ default: module.EditDocPage }))); // New
+const EditDocPage = lazy(() => import('../pages/EditDocPage').then(module => ({ default: module.EditDocPage })));
 const CreateBugPage = lazy(() => import('../pages/CreateBugPage').then(module => ({ default: module.CreateBugPage })));
 const BugDetailPage = lazy(() => import('../pages/BugDetailPage').then(module => ({ default: module.BugDetailPage })));
 const EditProfilePage = lazy(() => import('../pages/EditProfilePage').then(module => ({ default: module.EditProfilePage })));
@@ -57,9 +60,12 @@ export function AppRouter() {
                   <Route path="appearance" element={<AppearanceSettingsPage />} />
                   <Route path="blocked" element={<BlockedUsersPage />} />
               </Route>
-              <Route path="/create/snippet" element={<CreateSnippetPage />} />
+              <Route path="/create" element={<CreatePage />} />
+              <Route path="/create/snippet/select" element={<SelectSnippetTypePage />} />
+              <Route path="/create/snippet/html" element={<HtmlSnippetEditorPage />} />
+              <Route path="/create/snippet/react" element={<ReactSnippetEditorPage />} />
               <Route path="/create/doc" element={<CreateDocPage />} />
-              <Route path="/docs/:id/edit" element={<EditDocPage />} /> {/* New */}
+              <Route path="/docs/:id/edit" element={<EditDocPage />} />
               <Route path="/create/bug" element={<CreateBugPage />} />
 
               {/* Admin routes */}
