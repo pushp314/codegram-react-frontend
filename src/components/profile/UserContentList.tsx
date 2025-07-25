@@ -1,54 +1,49 @@
-// =============== src/components/profile/UserContentList.tsx ===============
-import React, { useState, useEffect } from 'react';
-import { apiClient as apiContent } from '../../lib/apiClient';
-import { FeedItemDTO } from '../../types';
+import { useEffect, useState } from 'react';
 import { Spinner } from '../ui/Spinner';
-import { FeedItemCard } from '../feed/FeedItemCard';
+import { apiClient } from '../../lib/apiClient';
+import { SnippetCard } from './SnippetCard';
 
-interface UserContentListProps {
+type Props = {
   username: string;
-  contentType: 'snippets' | 'docs' | 'bugs';
-}
+  type: 'snippets' | 'docs';
+};
 
-export const UserContentList: React.FC<UserContentListProps> = ({ username, contentType }) => {
-  const [content, setContent] = useState<FeedItemDTO[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function UserContentList({ username, type }: Props) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchContent = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const { data } = await apiContent.get(`/users/${username}/content`, {
-          params: { type: contentType },
-        });
-        setContent(data.content);
-      } catch (err) {
-        setError(`Failed to fetch ${contentType}.`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchContent();
-  }, [username, contentType]);
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
 
-  if (isLoading) return <Spinner />;
-  if (error) return <div className="text-red-500 text-center">{error}</div>;
+    apiClient
+      .get(`/users/${username}/content?type=${type}&limit=30`)
+      .then(res => {
+        if (isMounted) setItems(res.data.content || []);
+      })
+      .catch(() => {
+        if (isMounted) setError('Failed to fetch items');
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [username, type]);
+
+  if (loading) return <div className="flex justify-center py-8"><Spinner /></div>;
+  if (error) return <div className="text-danger text-center">{error}</div>;
+  if (!items.length) return <div className="text-gray-500 text-center py-8">No {type} found.</div>;
 
   return (
-    <div>
-      {content.length > 0 ? (
-        <div className="space-y-6">
-          {content.map((item) => (
-            <FeedItemCard key={item.id} item={item} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10">
-          <p className="text-gray-500">No {contentType} found.</p>
-        </div>
-      )}
+    <div className="flex flex-col gap-8 py-6">
+      {items.map(item => (
+        <SnippetCard key={item.id} snippet={item} />
+      ))}
     </div>
   );
-};
+}

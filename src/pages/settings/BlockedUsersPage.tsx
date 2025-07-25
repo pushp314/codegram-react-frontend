@@ -1,4 +1,3 @@
-// =============== src/pages/settings/BlockedUsersPage.tsx ===============
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../../lib/apiClient';
 import { User } from '../../types';
@@ -15,7 +14,8 @@ export const BlockedUsersPage: React.FC = () => {
     const fetchBlockedUsers = useCallback(async () => {
         setIsLoading(true);
         try {
-            const { data } = await apiClient.get('/settings/blocked-users');
+            // Updated endpoint to match your backend
+            const { data } = await apiClient.get('/moderation/blocked');
             setBlockedUsers(data.blockedUsers);
         } catch (error) {
             console.error("Failed to fetch blocked users", error);
@@ -32,7 +32,8 @@ export const BlockedUsersPage: React.FC = () => {
         try {
             // Optimistically remove the user from the list
             setBlockedUsers(prev => prev.filter(user => user.id !== userId));
-            await apiClient.post(`/users/${userId}/block`);
+            // Use moderation endpoint with userId in body
+            await apiClient.post('/moderation/block', { userId });
         } catch (error) {
             console.error("Failed to unblock user", error);
             // Re-fetch to get the correct state if the API call fails

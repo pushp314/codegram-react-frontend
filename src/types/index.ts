@@ -17,6 +17,8 @@ export interface User {
     followers: number;
     following: number;
     snippets: number;
+    docs: number;
+    bugs: number;
   }
 }
 
