@@ -23,6 +23,8 @@ export function ProfilePage() {
     const [error, setError] = useState<string | null>(null);
     const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
     const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
+    const [reporting, setReporting] = useState(false);
+    const [reportSuccess, setReportSuccess] = useState(false);
 
     // Fetch user profile info
     const fetchUser = useCallback(async (currentUsername: string) => {
@@ -31,7 +33,15 @@ export function ProfilePage() {
         try {
             // Correct endpoint per your backend
             const { data } = await apiProfilePage.get<ProfilePageData>(`/users/${currentUsername}`);
-            setProfile(data);
+            // Fetch follow status from correct endpoint
+            let isFollowing = false;
+            try {
+                const followRes = await apiProfilePage.get(`/follows/check/${data.user.id}`);
+                isFollowing = !!followRes.data.following;
+            } catch {
+                isFollowing = false;
+            }
+            setProfile({ ...data, isFollowing });
         } catch (err) {
             setError('Failed to fetch user profile.');
             console.error(err);
@@ -68,7 +78,21 @@ export function ProfilePage() {
         });
 
         try {
-            await apiProfilePage.post(`/users/${profile.user.username}/follow`);
+            await apiProfilePage.post(`/follows/${profile.user.id}`);
+            // Refetch follow status and counts for accuracy
+            const followRes = await apiProfilePage.get(`/follows/check/${profile.user.id}`);
+            const followersRes = await apiProfilePage.get(`/follows/${profile.user.id}/followers`);
+            setProfile(prev => prev ? {
+                ...prev,
+                isFollowing: !!followRes.data.following,
+                user: {
+                    ...prev.user,
+                    _count: {
+                        ...prev.user._count!,
+                        followers: followersRes.data.total
+                    }
+                }
+            } : prev);
         } catch (error) {
             console.error("Failed to toggle follow", error);
             setProfile(originalProfile);
@@ -93,7 +117,25 @@ export function ProfilePage() {
             setIsTogglingBlock(false);
         }
     };
-    
+
+    // Report user logic (FIXED ENDPOINT)
+    const handleReport = async () => {
+        if (!profile || !profile.user) return;
+        setReporting(true);
+        try {
+            await apiProfilePage.post('/moderation/report', {
+                reportedUserId: profile.user.id,
+                reason: 'SPAM', // Or collect via UI
+                description: '', // Or collect via UI
+            });
+            setReportSuccess(true);
+        } catch (error) {
+            setError('Failed to report user');
+        }
+        setReporting(false);
+        setTimeout(() => setReportSuccess(false), 3500);
+    };
+
     const openFollowersModal = () => {
         setFollowModalType('followers');
         setIsFollowModalOpen(true);
@@ -121,6 +163,9 @@ export function ProfilePage() {
                 isTogglingBlock={isTogglingBlock}
                 onFollowersClick={openFollowersModal}
                 onFollowingClick={openFollowingModal}
+                onReport={handleReport}
+                reporting={reporting}
+                reportSuccess={reportSuccess}
             />
             
             <Tabs defaultValue="snippets" className="w-full">
@@ -130,12 +175,13 @@ export function ProfilePage() {
                     <TabsTrigger value="bugs">Bugs ({profile.user._count?.bugs ?? 0})</TabsTrigger>
                 </TabsList>
                 <TabsContent value="snippets">
-                    {/* Correct fetch: uses /users/:username/content?type=snippets */}
                     <UserContentList username={profile.user.username} type="snippets" />
                 </TabsContent>
                 <TabsContent value="docs">
-                    {/* Correct fetch: uses /users/:username/content?type=docs */}
                     <UserContentList username={profile.user.username} type="docs" />
+                </TabsContent>
+                <TabsContent value="bugs">
+                    <UserContentList username={profile.user.username} type="bugs" />
                 </TabsContent>
             </Tabs>
 

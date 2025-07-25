@@ -1,5 +1,5 @@
 // =============== src/components/layout/Sidebar.tsx ===============
-import { Home, Code, Search, Bell as BellSidebar, Bookmark, Settings as SettingsSidebar, User as UserIconSidebar, TrendingUp } from 'lucide-react';
+import { Home, Code, Search, Bell as BellSidebar, Bookmark, Settings as SettingsSidebar, User as UserIconSidebar, Bug } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { UserAvatar } from '../ui/UserAvatar';
 import { NavLink } from 'react-router-dom';
@@ -10,14 +10,15 @@ export function Sidebar() {
   const { user } = useAuthStore();
 
   const navItems = [
-    { icon: Home, label: 'Home', path: '/' },
-    { icon: Code, label: 'Public Feed', path: '/public' },
-    { icon: TrendingUp, label: 'Trending', path: '/trending' },
-    { icon: Search, label: 'Search', path: '/search' },
-    { icon: BellSidebar, label: 'Notifications', path: '/notifications' },
-    { icon: Bookmark, label: 'Saved', path: '/saved' },
-    { icon: UserIconSidebar, label: 'Profile', path: `/profile/${user?.username}` },
-    { icon: SettingsSidebar, label: 'Settings', path: '/settings' },
+  { icon: Home, label: 'Home', path: '/' },
+  { icon: Code, label: 'Snippets', path: '/public' },
+  { icon: Bug, label: 'Bugs', path: '/bugs' },
+  { icon: Code, label: 'Docs', path: '/docs' }, // <-- ADD THIS LINE
+  { icon: Search, label: 'Search', path: '/search' },
+  { icon: BellSidebar, label: 'Notifications', path: '/notifications' },
+  { icon: Bookmark, label: 'Saved', path: '/saved' },
+  { icon: UserIconSidebar, label: 'Profile', path: `/profile/${user?.username}` },
+  { icon: SettingsSidebar, label: 'Settings', path: '/settings' },
   ];
 
   const activeLinkClass = "bg-gray-100 dark:bg-gray-700 text-sky-500";

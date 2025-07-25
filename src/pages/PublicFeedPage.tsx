@@ -20,16 +20,17 @@ export const PublicFeedPage: React.FC = () => {
         }
     };
 
-    // Only show snippet items, and map to have .code and safe description, safe avatar
+    // Only show snippet items, and map to have .code and safe description, safe avatar, and safe name
     const snippetItems = items
         .filter(item => item.type === 'snippet')
         .map(snippet => ({
             ...snippet,
-            code: snippet.content ?? '', // Use 'content' for 'code'
-            description: snippet.description ?? '', // Ensure string, not null
+            code: snippet.content ?? '',
+            description: snippet.description ?? '',
             author: {
                 ...snippet.author,
-                avatar: snippet.author.avatar ?? undefined, // Change null to undefined
+                avatar: snippet.author.avatar ?? undefined,
+                name: snippet.author.name ?? undefined,
             },
         }));
 
@@ -40,7 +41,10 @@ export const PublicFeedPage: React.FC = () => {
             {snippetItems.length > 0 && (
                 <div className="space-y-8">
                     {snippetItems.map(snippet => (
-                        <SnippetCard key={snippet.id} snippet={snippet} />
+                        <SnippetCard
+                            key={snippet.id}
+                            snippet={snippet}
+                        />
                     ))}
                 </div>
             )}

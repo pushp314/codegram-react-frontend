@@ -1,4 +1,3 @@
-// =============== src/pages/HomePage.tsx ===============
 import { useRef, useCallback } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { apiClient } from '../lib/apiClient';
@@ -42,7 +41,9 @@ export function HomePage() {
         if (node) observer.current.observe(node);
     }, [isLoading, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-    const feedItems = data?.pages.flatMap(page => page.data) ?? [];
+    // Only show snippets
+    const feedItems = (data?.pages.flatMap(page => page.data) ?? [])
+        .filter((item: FeedItemDTO) => item.type === 'snippet');
 
     if (isLoading) return <div className="flex justify-center items-center h-full"><Spinner /></div>;
     if (error) return <p className="text-center text-red-500">Failed to load feed.</p>;

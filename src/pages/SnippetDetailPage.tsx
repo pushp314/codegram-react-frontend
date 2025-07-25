@@ -1,4 +1,3 @@
-// =============== src/pages/SnippetDetailPage.tsx ===============
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
@@ -16,12 +15,24 @@ export const SnippetDetailPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Like state
+    const [isLiked, setIsLiked] = useState(false);
+    const [likesCount, setLikesCount] = useState(0);
+    const [loadingLike, setLoadingLike] = useState(false);
+
+    // Bookmark state (legacy, update if bookmarks controller exists)
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [loadingBookmark, setLoadingBookmark] = useState(false);
+
     useEffect(() => {
         const fetchSnippet = async () => {
             try {
                 setIsLoading(true);
                 const { data } = await apiClient.get(`/snippets/${id}`);
                 setSnippet(data);
+                setIsLiked(data.isLiked);
+                setLikesCount(data.likesCount || 0);
+                setIsBookmarked(data.isBookmarked);
             } catch (err) {
                 setError('Failed to fetch snippet.');
             } finally {
@@ -32,6 +43,48 @@ export const SnippetDetailPage: React.FC = () => {
             fetchSnippet();
         }
     }, [id]);
+
+    // Check like status on mount (optional, if not included in snippet API)
+    useEffect(() => {
+        if (!id) return;
+        const fetchLike = async () => {
+            try {
+                const res = await apiClient.get(`/likes/check?snippetId=${id}`);
+                setIsLiked(res.data.liked);
+            } catch {}
+        };
+        fetchLike();
+    }, [id]);
+
+    const handleLike = async () => {
+        setLoadingLike(true);
+        setError(null);
+        try {
+            const res = await apiClient.post('/likes', { snippetId: id });
+            setIsLiked(res.data.liked);
+            setLikesCount(likesCount + (res.data.liked ? 1 : -1));
+        } catch (err) {
+            setError('Failed to toggle like');
+        }
+        setLoadingLike(false);
+    };
+
+    const handleBookmark = async () => {
+        setLoadingBookmark(true);
+        setError(null);
+        try {
+            if (!isBookmarked) {
+                await apiClient.post(`/snippets/${id}/bookmark`);
+                setIsBookmarked(true);
+            } else {
+                await apiClient.delete(`/snippets/${id}/bookmark`);
+                setIsBookmarked(false);
+            }
+        } catch (err) {
+            setError('Failed to toggle bookmark');
+        }
+        setLoadingBookmark(false);
+    };
 
     if (isLoading) return <div className="flex justify-center items-center h-full"><Spinner /></div>;
     if (error) return <div className="text-red-500 text-center">{error}</div>;
@@ -80,22 +133,23 @@ export const SnippetDetailPage: React.FC = () => {
 
                 <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center text-gray-500 dark:text-gray-400">
                     <div className="flex gap-4">
-                        <button className="flex items-center gap-2 hover:text-red-500">
-                            <Heart size={20} className={snippet.isLiked ? 'text-red-500 fill-current' : ''} />
-                            <span>{snippet.likesCount}</span>
+                        <button className="flex items-center gap-2 hover:text-red-500" onClick={handleLike} disabled={loadingLike}>
+                            <Heart size={20} className={isLiked ? 'text-red-500 fill-current' : ''} />
+                            <span>{likesCount}</span>
                         </button>
                         <button className="flex items-center gap-2 hover:text-sky-500">
                             <MessageCircle size={20} />
                             <span>{snippet.commentsCount}</span>
                         </button>
                     </div>
-                    <button className="flex items-center gap-2 hover:text-green-500">
-                        <Bookmark size={20} className={snippet.isBookmarked ? 'text-green-500 fill-current' : ''} />
+                    <button className="flex items-center gap-2 hover:text-green-500" onClick={handleBookmark} disabled={loadingBookmark}>
+                        <Bookmark size={20} className={isBookmarked ? 'text-green-500 fill-current' : ''} />
                         <span>{snippet.bookmarksCount}</span>
                     </button>
                 </div>
             </div>
             <CommentSection contentId={{ snippetId: snippet.id }} />
+            {error && <div className="text-center text-red-500 mt-2">{error}</div>}
         </div>
     );
 };

@@ -5,7 +5,7 @@ import { SnippetCard } from './SnippetCard';
 
 type Props = {
   username: string;
-  type: 'snippets' | 'docs';
+  type: 'snippets' | 'docs' | 'bugs';
 };
 
 export function UserContentList({ username, type }: Props) {

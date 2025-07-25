@@ -42,6 +42,8 @@ export interface Snippet extends ContentBase {
   description: string | null;
   content: string;
   language: string;
+  code: string; // <-- Add this line!
+
 }
 
 export interface Doc extends ContentBase {

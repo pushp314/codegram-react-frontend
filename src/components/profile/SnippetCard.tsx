@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MoreVertical, Edit, Trash, Bookmark, Flag, UserMinus, UserPlus, Share2, MessageCircle, Heart } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { formatDistanceToNow } from 'date-fns';
 import clsx from 'clsx';
+import { apiClient } from '../../lib/apiClient';
+import { useNavigate } from 'react-router-dom';
 
 export type SnippetCardProps = {
   snippet: {
@@ -11,13 +13,14 @@ export type SnippetCardProps = {
     description: string;
     tags?: string[];
     code: string;
-    language: 'html' | 'react' | 'js' | string;
+    language: string;
     previewCode?: string;
     createdAt: string;
     author: {
       id: string;
       username: string;
       avatar?: string;
+      name?: string;
     };
     likesCount: number;
     commentsCount: number;
@@ -28,16 +31,18 @@ export type SnippetCardProps = {
   };
   onEdit?: () => void;
   onDelete?: () => void;
-  onBookmark?: () => void;
-  onUnbookmark?: () => void;
-  onReport?: () => void;
   onShare?: () => void;
+  onLike?: () => void;
+  onReport?: () => void;
   onUnfollow?: () => void;
+  onBookmark?: () => void;
   onFollow?: () => void;
+  currentUser?: any;
   isFollowed?: boolean;
+
 };
 
-function SnippetPreview({ code, language }: { code: string, language: string }) {
+function SnippetPreview({ code, language }: { code: string; language: string }) {
   if (language === 'html') {
     return (
       <div className="bg-white rounded-lg p-4 min-h-[220px]">
@@ -45,7 +50,6 @@ function SnippetPreview({ code, language }: { code: string, language: string }) 
       </div>
     );
   }
-  // Placeholder for React/JS previews
   return (
     <div className="bg-white rounded-lg p-4 min-h-[220px] flex items-center justify-center text-gray-400">
       Preview not available.
@@ -57,21 +61,104 @@ export function SnippetCard({
   snippet,
   onEdit,
   onDelete,
-  onBookmark,
-  onUnbookmark,
-  onReport,
   onShare,
+  onReport,
   onUnfollow,
   onFollow,
   isFollowed,
+  onBookmark,
 }: SnippetCardProps) {
   const currentUser = useAuthStore(s => s.user);
-  const [showMenu, setShowMenu] = useState(false);
+  const navigate = useNavigate();
   const [tab, setTab] = useState<'preview' | 'code'>('preview');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const isAuthor = currentUser?.id === snippet.author.id;
+
+  // Like/Bookmark state
+  const [isLiked, setIsLiked] = useState(!!snippet.isLiked);
+  const [likesCount, setLikesCount] = useState(snippet.likesCount || 0);
+  const [loadingLike, setLoadingLike] = useState(false);
+
+  const [isBookmarked, setIsBookmarked] = useState(!!snippet.isBookmarked);
+  const [bookmarksCount, setBookmarksCount] = useState(snippet.bookmarksCount || 0);
+  const [loadingBookmark, setLoadingBookmark] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+
+  // Close menu on outside click/Escape
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [menuOpen]);
+
+  // Like
+  const handleLike = async () => {
+    if (loadingLike) return;
+    setLoadingLike(true);
+    setError(null);
+    try {
+      const res = await apiClient.post('/likes', { snippetId: snippet.id });
+      setIsLiked(res.data.liked);
+      setLikesCount(prev => prev + (res.data.liked ? 1 : -1));
+    } catch {
+      setError('Failed to toggle like');
+    }
+    setLoadingLike(false);
+  };
+
+  // Bookmark (updated logic)
+  const handleBookmark = async () => {
+    if (loadingBookmark) return;
+    setLoadingBookmark(true);
+    setError(null);
+    try {
+      // Use correct API endpoint to toggle bookmark
+      const res = await apiClient.post('/bookmarks', { snippetId: snippet.id });
+      setIsBookmarked(res.data.bookmarked);
+      setBookmarksCount(prev => prev + (res.data.bookmarked ? 1 : -1));
+      onBookmark?.();
+    } catch {
+      setError('Failed to toggle bookmark');
+    }
+    setLoadingBookmark(false);
+  };
+
+  // Delete
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this snippet?')) return;
+    setLoadingDelete(true);
+    setError(null);
+    try {
+      await apiClient.delete(`/snippets/${snippet.id}`);
+      onDelete?.();
+    } catch {
+      setError('Failed to delete snippet');
+    }
+    setLoadingDelete(false);
+  };
+
+  // Comments navigation
+  const handleCommentsClick = () => {
+    navigate(`/snippets/${snippet.id}#comments`);
+  };
 
   return (
     <div className="rounded-xl bg-[#19202c] border border-[#232c3b] shadow-sm mb-8 overflow-hidden">
+      {/* Header: Profile + Menu */}
       <div className="flex items-center justify-between px-5 pt-5 pb-2">
         <div className="flex items-center gap-3">
           <img
@@ -80,32 +167,34 @@ export function SnippetCard({
             className="w-10 h-10 rounded-full border border-[#232c3b]"
           />
           <div>
-            <div className="font-semibold text-white">{snippet.author.username}</div>
+            <div className="font-semibold text-white">{snippet.author.name ?? snippet.author.username}</div>
             <div className="text-xs text-gray-400">
               {formatDistanceToNow(new Date(snippet.createdAt), { addSuffix: true })}
             </div>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             className="text-gray-400 hover:text-gray-200 p-2 rounded-full transition"
-            onClick={() => setShowMenu(v => !v)}
+            onClick={() => setMenuOpen(v => !v)}
             aria-label="Show menu"
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
           >
             <MoreVertical size={20} />
           </button>
-          {showMenu && (
-            <div className="absolute right-0 mt-2 z-10 bg-[#232c3b] shadow-lg rounded w-44 text-sm py-1">
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 z-10 bg-[#232c3b] shadow-lg rounded w-44 text-sm py-1" role="menu">
               {isAuthor ? (
                 <>
                   <button className="flex items-center w-full px-4 py-2 hover:bg-[#222b3a] text-white" onClick={onEdit}>
                     <Edit size={16} className="mr-2" /> Edit
                   </button>
-                  <button className="flex items-center w-full px-4 py-2 hover:bg-[#222b3a] text-white" onClick={onDelete}>
-                    <Trash size={16} className="mr-2" /> Delete
+                  <button className="flex items-center w-full px-4 py-2 hover:bg-[#222b3a] text-white" onClick={handleDelete} disabled={loadingDelete}>
+                    <Trash size={16} className="mr-2" /> {loadingDelete ? 'Deleting...' : 'Delete'}
                   </button>
-                  <button className="flex items-center w-full px-4 py-2 hover:bg-[#222b3a] text-white" onClick={snippet.isBookmarked ? onUnbookmark : onBookmark}>
-                    <Bookmark size={16} className="mr-2" /> {snippet.isBookmarked ? 'Saved' : 'Save'}
+                  <button className="flex items-center w-full px-4 py-2 hover:bg-[#222b3a] text-white" onClick={handleBookmark} disabled={loadingBookmark}>
+                    <Bookmark size={16} className="mr-2" /> {isBookmarked ? 'Saved' : 'Save'}
                   </button>
                 </>
               ) : (
@@ -123,8 +212,8 @@ export function SnippetCard({
                       <UserPlus size={16} className="mr-2" /> Follow
                     </button>
                   )}
-                  <button className="flex items-center w-full px-4 py-2 hover:bg-[#222b3a] text-white" onClick={snippet.isBookmarked ? onUnbookmark : onBookmark}>
-                    <Bookmark size={16} className="mr-2" /> {snippet.isBookmarked ? 'Saved' : 'Save'}
+                  <button className="flex items-center w-full px-4 py-2 hover:bg-[#222b3a] text-white" onClick={handleBookmark} disabled={loadingBookmark}>
+                    <Bookmark size={16} className="mr-2" /> {isBookmarked ? 'Saved' : 'Save'}
                   </button>
                 </>
               )}
@@ -142,6 +231,7 @@ export function SnippetCard({
               : "text-gray-400 hover:text-[#3da9fc]"
           )}
           onClick={() => setTab('preview')}
+          aria-pressed={tab === 'preview'}
         >
           ▶ Preview
         </button>
@@ -153,6 +243,7 @@ export function SnippetCard({
               : "text-gray-400 hover:text-[#3da9fc]"
           )}
           onClick={() => setTab('code')}
+          aria-pressed={tab === 'code'}
         >
           <span className="inline-block align-middle mr-1">&lt;/&gt;</span> Code
         </button>
@@ -171,10 +262,18 @@ export function SnippetCard({
       </div>
       {/* Actions */}
       <div className="flex items-center px-5 py-2 gap-6 border-b border-[#232c3b]">
-        <button className={clsx("flex items-center gap-1 text-gray-400 hover:text-[#3da9fc] transition", snippet.isLiked && "text-[#3da9fc] font-semibold")}>
-          <Heart size={19} className="mr-1" /> {snippet.likesCount}
+        <button
+          className={clsx("flex items-center gap-1 text-gray-400 hover:text-[#3da9fc] transition", isLiked && "text-[#3da9fc] font-semibold")}
+          onClick={handleLike}
+          disabled={loadingLike}
+          aria-pressed={isLiked}
+        >
+          <Heart size={19} className="mr-1" /> {likesCount}
         </button>
-        <button className="flex items-center gap-1 text-gray-400 hover:text-[#3da9fc] transition">
+        <button
+          className="flex items-center gap-1 text-gray-400 hover:text-[#3da9fc] transition"
+          onClick={handleCommentsClick}
+        >
           <MessageCircle size={19} className="mr-1" /> {snippet.commentsCount}
         </button>
         <button
@@ -183,8 +282,13 @@ export function SnippetCard({
         >
           <Share2 size={19} className="mr-1" /> Share
         </button>
-        <button className={clsx("ml-auto", snippet.isBookmarked ? "text-[#3da9fc]" : "text-gray-400 hover:text-[#3da9fc]")}>
-          <Bookmark size={22} />
+        <button
+          className={clsx("ml-auto", isBookmarked ? "text-[#3da9fc]" : "text-gray-400 hover:text-[#3da9fc]")}
+          onClick={handleBookmark}
+          disabled={loadingBookmark}
+          aria-pressed={isBookmarked}
+        >
+          <Bookmark size={22} /> {bookmarksCount}
         </button>
       </div>
       {/* Info: Title, Description, Tags */}
@@ -197,9 +301,16 @@ export function SnippetCard({
           ))}
         </div>
       </div>
-      <div className="px-5 pb-4 text-sm text-[#3da9fc] cursor-pointer hover:underline">
-        View all {snippet.commentsCount} comments
+      <div className="px-5 pb-4">
+        <button
+          className="text-sm text-[#3da9fc] cursor-pointer hover:underline bg-transparent border-none"
+          onClick={handleCommentsClick}
+          type="button"
+        >
+          View all {snippet.commentsCount} comments
+        </button>
       </div>
+      {error && <div className="px-5 pb-2 text-red-500">{error}</div>}
     </div>
   );
 }

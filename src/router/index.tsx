@@ -1,4 +1,3 @@
-// =============== src/router/index.tsx ===============
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -19,11 +18,12 @@ const ReactSnippetEditorPage = lazy(() => import('../pages/ReactSnippetEditorPag
 const SnippetDetailPage = lazy(() => import('../pages/SnippetDetailPage').then(module => ({ default: module.SnippetDetailPage })));
 const PublicFeedPage = lazy(() => import('../pages/PublicFeedPage').then(module => ({ default: module.PublicFeedPage })));
 const SearchPage = lazy(() => import('../pages/SearchPage').then(module => ({ default: module.SearchPage })));
-const TrendingPage = lazy(() => import('../pages/TrendingPage').then(module => ({ default: module.TrendingPage })));
 const CreateDocPage = lazy(() => import('../pages/CreateDocPage').then(module => ({ default: module.CreateDocPage })));
+const DocsPage = lazy(() => import('../pages/DocsPage').then(module => ({ default: module.DocsPage })));
 const DocDetailPage = lazy(() => import('../pages/DocDetailPage').then(module => ({ default: module.DocDetailPage })));
 const EditDocPage = lazy(() => import('../pages/EditDocPage').then(module => ({ default: module.EditDocPage })));
 const CreateBugPage = lazy(() => import('../pages/CreateBugPage').then(module => ({ default: module.CreateBugPage })));
+const BugPage = lazy(() => import('../pages/BugPage').then(module => ({ default: module.BugPage }))); // Bug list page
 const BugDetailPage = lazy(() => import('../pages/BugDetailPage').then(module => ({ default: module.BugDetailPage })));
 const EditProfilePage = lazy(() => import('../pages/EditProfilePage').then(module => ({ default: module.EditProfilePage })));
 const PrivacySettingsPage = lazy(() => import('../pages/settings/PrivacySettingsPage').then(module => ({ default: module.PrivacySettingsPage })));
@@ -32,6 +32,7 @@ const AppearanceSettingsPage = lazy(() => import('../pages/settings/AppearanceSe
 const BlockedUsersPage = lazy(() => import('../pages/settings/BlockedUsersPage').then(module => ({ default: module.BlockedUsersPage })));
 const AdminPage = lazy(() => import('../pages/admin/AdminPage').then(module => ({ default: module.AdminPage })));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage').then(module => ({ default: module.NotificationsPage })));
+const SavedPage = lazy(() => import('../pages/SavedPage').then(module => ({ default: module.SavedPage }))); // <-- Add this line
 
 export function AppRouter() {
   return (
@@ -42,10 +43,11 @@ export function AppRouter() {
           {/* Public routes */}
           <Route path="/snippets/:id" element={<SnippetDetailPage />} />
           <Route path="/docs/:id" element={<DocDetailPage />} />
+          <Route path="/docs" element={<DocsPage />} />
           <Route path="/bugs/:id" element={<BugDetailPage />} />
+          <Route path="/bugs" element={<BugPage />} />
           <Route path="/public" element={<PublicFeedPage />} />
           <Route path="/search" element={<SearchPage />} />
-          <Route path="/trending" element={<TrendingPage />} />
           <Route path="/profile/:username" element={<ProfilePage />} />
           
           {/* Protected routes */}
@@ -67,6 +69,9 @@ export function AppRouter() {
               <Route path="/create/doc" element={<CreateDocPage />} />
               <Route path="/docs/:id/edit" element={<EditDocPage />} />
               <Route path="/create/bug" element={<CreateBugPage />} />
+
+              {/* Saved page route */}
+              <Route path="/saved" element={<SavedPage />} /> {/* <-- Add this line */}
 
               {/* Admin routes */}
               <Route path="/admin" element={<AdminRoute />}>
